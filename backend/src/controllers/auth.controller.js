@@ -1,8 +1,17 @@
 import { generateToken } from '../lib/utils.js';
+import bcrypt from 'bcryptjs';
 import User from '../models/user.model.js';
+
+
+
 export const signup = async (req, res) => {
     const { fullname, email, password } = req.body;
     try{
+
+        if(!fullname || !email || !password){
+            return res.status(400).json({ message: "All fields are required." });
+        }
+
         //hashing
         if(password.length < 6){
             return res.status(400).json({ message: "Password must be at least 6 characters long." });
@@ -22,22 +31,23 @@ export const signup = async (req, res) => {
             password: hashedPassword
         });
 
-        if(newUser){
-            //generate jwt token
-            generateToken(newUser._id,res);
-            await newUser.save();
-            res.status(201).json({_id: newUser._id, fullname: newUser.fullname, email: newUser.email, profilepic: newUser.profilepic});
-
-        }else{
-            res.status(400).json({ message: "Invalid user data." });
+        if(!newUser){
+            return res.status(400).json({ message: "Invalid user data." });
         }
 
+        // generate jwt token (may set cookies on res)
+        generateToken(newUser._id, res);
         await newUser.save();
-        res.status(201).json({ message: "User created successfully." });
+        return res.status(201).json({
+            _id: newUser._id,
+            fullname: newUser.fullname,
+            email: newUser.email,
+            profilepic: newUser.profilepic
+        });
 
     } catch(error){
         console.log("Error in signup controller:", error.message);
-        res.status(500).json({ message: "Internal server error." });
+        return res.status(500).json({ message: "Internal server error." });
     }
 
 };
@@ -56,11 +66,33 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials." });
         }
 
-        res.status(200).json({ message: "Login successful." });
+        generateToken(user._id, res);
+
+        return res.status(200).json({
+            _id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            profilepic: user.profilepic
+        });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error." });
+        console.log("Error in login controller:", error.message);
+        return res.status(500).json({ message: "Internal server error." });
     }
 };
 export const logout = (req, res) => {
-   res.status(200).json({ message: "Logout successful." });
+    try{
+        res.clearCookie('token', { httpOnly: true, sameSite: 'Strict', secure: process.env.NODE_ENV !== 'development' });
+
+    } catch (error) {
+        console.log("Error in logout controller:", error.message);
+        return res.status(500).json({ message: "Internal server error." });
+    }
+    return res.status(200).json({ message: "Logout successful." });
+
+   
+};
+
+
+export const updateProfile = async (req, res) => {
+    const { fullname, email, profilepic } = req.body;
 };
