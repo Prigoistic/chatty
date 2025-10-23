@@ -1,0 +1,21 @@
+ import authRoutes from './src/routes/auth.route.js';
+ import dotenv from 'dotenv';
+ dotenv.config();
+
+import express from 'express';
+import { connectDB } from './src/lib/db.js';
+import { connect } from 'mongoose';
+const app = express();
+const port = process.env.PORT;
+app.use(express.json())
+app.use("/api/auth", authRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
+
+app.listen(port, () => {
+  console.log("Server running on PORT:", port);
+  connectDB();
+});
+
