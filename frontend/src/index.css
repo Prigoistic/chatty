@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Subtle iMessage-like chat background that respects DaisyUI theme vars */
+.chat-background {
+	/* DaisyUI exposes theme vars like --b1 (base-100), --b2 (base-200) */
+	--bg1: hsl(var(--b2));
+	--bg2: hsl(var(--b1));
+
+	background:
+		radial-gradient(60px 60px at 20% 20%, color-mix(in oklab, var(--bg2) 85%, transparent), transparent 70%),
+		radial-gradient(80px 80px at 80% 10%, color-mix(in oklab, var(--bg2) 80%, transparent), transparent 70%),
+		linear-gradient(180deg, color-mix(in oklab, var(--bg2) 92%, transparent), transparent 30%),
+		var(--bg1);
+}
+
+/* Message bubble tweaks */
+.bubble {
+	@apply rounded-2xl px-3 py-2 shadow-sm max-w-[78%] sm:max-w-[65%] whitespace-pre-wrap break-words;
+}
+.bubble-me {
+	/* Sender bubble: iMessage-like primary blue */
+	@apply bg-primary text-primary-content;
+}
+.bubble-them {
+	/* Receiver bubble: neutral gray depending on theme */
+	@apply bg-base-300 text-base-content;
+}
+.bubble img {
+	@apply rounded-lg border border-base-300 mb-2 max-w-full h-auto;
+}
+
+.message-meta {
+	@apply text-[10px] sm:text-xs opacity-60 mt-1 select-none;
+}

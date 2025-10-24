@@ -21,7 +21,11 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       get().connectSocket();
     } catch (error) {
-      console.log("Error in checkAuth:", error);
+      // It's normal to get 401 here when there's no active session yet (e.g., fresh page load/incognito).
+      const status = error?.response?.status;
+      if (status !== 401) {
+        console.warn("Error in checkAuth:", error?.response?.data || error?.message || error);
+      }
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
