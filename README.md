@@ -62,22 +62,22 @@ When a user logs in, we open a Socket.IO connection and attach `userId` in the c
 
 ```mermaid
 sequenceDiagram
-	autonumber
-	participant UI as React UI
-	participant API as Express REST (/api)
-	participant WS as Socket.IO Server
-	participant DB as MongoDB
+  autonumber
+  participant UI as React UI
+  participant API as Express API (/api)
+  participant WS as Socket.IO Server
+  participant DB as MongoDB
 
-	UI->>API: POST /api/auth/login (email, password)
-	API-->>UI: Set-Cookie: jwt=...; HttpOnly; SameSite=Strict
-	UI->>WS: io.connect(query: { userId })
-	WS->>WS: userSocketMap[userId] = socket.id
-	WS-->>UI: emit("getOnlineUsers", [userIds])
+  UI->>API: POST /api/auth/login (email, password)
+  API->>UI: Set-Cookie jwt; HttpOnly; SameSite=Strict
+  UI->>WS: io.connect with userId
+  WS->>WS: map userId -> socket.id
+  WS->>UI: getOnlineUsers [userIds]
 
-	UI->>API: POST /api/message/send/:id { text, image? }
-	API->>DB: save Message
-	API->>WS: io.to(receiverSocketId).emit("newMessage", message)
-	WS-->>UI: UI of receiver gets "newMessage"
+  UI->>API: POST /api/message/send/:id { text, image? }
+  API->>DB: save message
+  API->>WS: emit newMessage to receiver
+  WS->>UI: receiver gets newMessage
 ```
 
 Server keeps a simple `userSocketMap` and emits `getOnlineUsers` whenever someone connects/disconnects. The REST send endpoint persists the message, then emits `newMessage` to the receiver’s socket if online.
