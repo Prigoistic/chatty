@@ -1,52 +1,50 @@
-# Chat Application (Express + React)
+# Whisp — Real‑time Chat (Express + React + Socket.IO)
 
-A simple chat application starter with a Node/Express backend and a Vite + React frontend. The backend provides authentication, user listing, and profile update endpoints. The frontend is a Vite scaffold ready to integrate with the APIs.
+Whisp is a simple, clean, real‑time chat app. Backend is Node/Express with MongoDB and JWT cookie auth; frontend is Vite + React with Socket.IO for live updates. The UI is styled to feel iMessage‑like and stays theme‑aware via DaisyUI.
 
-This README gives you a quick overview. Deep-dive docs live in `docs/`:
+Deep‑dive docs live in `docs/`:
 
-- docs/API.md — API reference with request/response examples
-- docs/ARCHITECTURE.md — Folder structure and internal flow
-- docs/ENV.md — Environment variables and .env templates
+- `docs/API.md` — API reference with request/response examples
+- `docs/ARCHITECTURE.md` — Folder structure and internal flow
+- `docs/ENV.md` — Environment variables and .env templates
 
 ## Tech stack
 
-- Backend: Node.js, Express 5, Mongoose (MongoDB), JWT, bcryptjs, Cloudinary
-- Frontend: Vite + React
+- Backend: Node.js, Express 5, Mongoose (MongoDB), JWT, bcryptjs, Cloudinary, Socket.IO
+- Frontend: Vite + React, Zustand, Tailwind + DaisyUI, Socket.IO Client
 
 ## Repository structure
 
 ```
 backend/
-	index.js                 # Express entrypoint
-	package.json             # Backend dependencies
+	package.json            # Backend scripts/deps
 	src/
-		controllers/           # Route handlers
-		lib/                   # DB connection, utils, cloudinary config
-		middleware/            # Auth middleware (JWT cookie)
-		models/                # Mongoose models
-		routes/                # Express routers
+		index.js              # Express entrypoint (serves frontend in production)
+		controllers/          # Route handlers
+		lib/                  # DB connect, utils, cloudinary, socket server
+		middleware/           # Auth middleware (JWT cookie)
+		models/               # Mongoose models
+		routes/               # Express routers
 frontend/
-	package.json             # Frontend dependencies
-	src/                     # React app scaffold
+	package.json            # Frontend scripts/deps
+	src/                    # React app
+	vite.config.js          # Dev proxy /api -> backend:3000
 ```
 
-## Quick start
+## Quick start (local)
 
-1) Backend setup
+1) Backend
 
-- Create `backend/.env` (see `docs/ENV.md` or `backend/.env.example`).
-- Install deps and run:
+- Create `backend/.env` (see `docs/ENV.md`). Required: `PORT`, `MONGODB_URL`, `JWT_SECRET`, Cloudinary keys.
+- Start:
 
 ```bash
 cd backend
 npm install
-# Development (watches for changes if you use nodemon):
-npx nodemon index.js
-# or run directly:
-node index.js
+npm run dev
 ```
 
-2) Frontend setup (optional for now)
+2) Frontend
 
 ```bash
 cd frontend
@@ -54,43 +52,114 @@ npm install
 npm run dev
 ```
 
-Tip: When calling the backend from the frontend, add a Vite dev proxy in `vite.config.js` and use `credentials: 'include'` to send JWT cookies. See `docs/API.md` for details.
+Notes
+- Frontend uses a Vite proxy so any request to `/api` goes to `http://localhost:3000`. Axios is configured with `withCredentials: true` to send the JWT cookie.
+- Socket.IO in dev connects to `http://localhost:3000`; in production it uses same‑origin by default.
+
+## How real‑time works (Socket.IO)
+
+When a user logs in, we open a Socket.IO connection and attach `userId` in the connection query. The server tracks online users and emits updates; when you send a message via REST, the server pushes it live to the receiver if they’re online.
+
+```mermaid
+sequenceDiagram
+	autonumber
+	participant UI as React UI
+	participant API as Express REST (/api)
+	participant WS as Socket.IO Server
+	participant DB as MongoDB
+
+	UI->>API: POST /api/auth/login (email, password)
+	API-->>UI: Set-Cookie: jwt=...; HttpOnly; SameSite=Strict
+	UI->>WS: io.connect(query: { userId })
+	WS->>WS: userSocketMap[userId] = socket.id
+	WS-->>UI: emit("getOnlineUsers", [userIds])
+
+	UI->>API: POST /api/message/send/:id { text, image? }
+	API->>DB: save Message
+	API->>WS: io.to(receiverSocketId).emit("newMessage", message)
+	WS-->>UI: UI of receiver gets "newMessage"
+```
+
+Server keeps a simple `userSocketMap` and emits `getOnlineUsers` whenever someone connects/disconnects. The REST send endpoint persists the message, then emits `newMessage` to the receiver’s socket if online.
+
+Socket events
+- Server → Client: `getOnlineUsers` (string[] of userIds), `newMessage` (Message)
+- Client → Server: connection lifecycle (Socket.IO handles it)
 
 ## API quick reference
 
-Base URL: `http://localhost:3000`
+Base URL (dev): `http://localhost:3000`
 
-- POST `/api/auth/signup` — Create account (sets `token` cookie)
-- POST `/api/auth/login` — Login (sets `token` cookie)
+Auth
+- POST `/api/auth/signup` — Create account (sets `jwt` cookie)
+- POST `/api/auth/login` — Login (sets `jwt` cookie)
 - POST `/api/auth/logout` — Logout (clears cookie)
+- GET `/api/auth/check` — Return current user (protected)
 - PUT `/api/auth/update-profile` — Update profile picture (protected)
-- GET `/api/auth/check` — Returns current user from token (protected)
 
+Messages
 - GET `/api/message/users` — List other users (protected)
-- GET `/api/message/users/:id` — Get a specific user (protected)
+- GET `/api/message/:id` — Conversation with user `:id` (protected)
+- POST `/api/message/send/:id` — Send message to user `:id` (protected)
 
-For example, in a terminal:
+Example (curl)
 
 ```bash
 # Login and persist cookie
-curl -i -c /tmp/c.jar -b /tmp/c.jar \
+curl -i -c /tmp/cjar -b /tmp/cjar \
 	-X POST http://localhost:3000/api/auth/login \
 	-H 'Content-Type: application/json' \
 	-d '{"email":"you@example.com","password":"secret123"}'
 
-# Check current user with cookie
-curl -i -b /tmp/c.jar http://localhost:3000/api/auth/check
+# Check current user using cookie
+curl -i -b /tmp/cjar http://localhost:3000/api/auth/check
 ```
-
-See `docs/API.md` for complete request/response bodies, status codes, and auth requirements.
 
 ## Environment variables
 
-Back end requires: `PORT`, `MONGODB_URL`, `JWT_SECRET`, `CLOUDINARY_*`. Front end can optionally define `VITE_API_BASE` if you don’t use a dev proxy. See `docs/ENV.md` and the `.env.example` files.
+Backend (required)
+- `PORT` — e.g., 3000 (Render sets this automatically)
+- `MONGODB_URL` — MongoDB connection string
+- `JWT_SECRET` — Secret for signing JWT
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- Optional: `CLIENT_ORIGIN` — allow CORS from a separate frontend origin (only needed if not serving frontend from backend)
+
+Frontend (optional for custom hosting)
+- `VITE_API_BASE` — Override REST base (default: `/api`)
+- `VITE_SOCKET_URL` — Override Socket.IO URL (default: dev → `http://localhost:3000`, prod → same‑origin)
+
+## Deployment (Render)
+
+Single Web Service (backend serves the built frontend)
+
+1) Create a Web Service from this repository (root)
+2) Set Build Command:
+
+```bash
+npm run build
+```
+
+3) Set Start Command:
+
+```bash
+npm start
+```
+
+4) Add env vars listed above (Backend section).
+
+What the scripts do
+- Root `package.json`:
+	- `build`: installs backend + frontend deps, then builds the frontend
+	- `start`: starts the backend (which serves `frontend/dist` in production)
+
+After deploy
+- Load your Render URL; the server will serve the SPA and expose REST under `/api` and Socket.IO under the same origin.
+- If you host the frontend separately, set `CLIENT_ORIGIN` on the backend and configure `VITE_API_BASE` and `VITE_SOCKET_URL` on the frontend host. For cross‑site cookies, switch to `SameSite: "none"` and keep `secure: true` (ask us to adjust if you choose this route).
 
 ## Notes
 
-- Auth uses an HttpOnly JWT cookie named `token` with `SameSite=Strict`.
-- Protected routes require the cookie to be sent. In browsers, add `credentials: 'include'` to fetch/axios. In Postman, ensure the cookie jar includes `token` for `localhost:3000`.
-- Express 5 is used; route/middleware signatures follow async/await patterns with try/catch and early returns.
+- Auth uses an HttpOnly JWT cookie named `jwt` with `SameSite=Strict` (secure in production). This is ideal when backend serves the frontend (same origin).
+- Protected routes require sending credentials; Axios is already configured with `withCredentials: true`.
+- Express 5 is used; controllers use async/await with early returns.
+
 
