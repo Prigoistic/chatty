@@ -1,0 +1,39 @@
+# Node & dependencies
+node_modules/
+.pnp.cjs
+.pnp.loader.mjs
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.cache/
+
+# Coverage
+coverage/
+
+# OS/Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+
+# Vite/React
+.vite/
+
+# Others
+.turbo/
+.next/
+.vercel/
