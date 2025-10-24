@@ -1,39 +1,101 @@
-# Node & dependencies
+############################################################
+# Root .gitignore for Node.js monorepo (backend + frontend)
+# - Ignore dependencies, build outputs, caches, logs
+# - Ignore local env files but keep example templates
+############################################################
+
+# Dependencies
 node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+storybook-static/
+coverage/
+.nyc_output/
+
+# Framework/tool caches
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.cache/
+.parcel-cache/
+
+# Package manager caches
 .pnp.cjs
+.pnp.data.json
 .pnp.loader.mjs
+.pnp.loader.js
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnpm-store/
+.npm/
 
-# Environment files
-.env
-.env.*
-!.env.example
-
-# Logs
-logs/
+# Logs and debug
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
-# Build outputs
-dist/
-build/
-.cache/
+# PIDs
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Coverage
-coverage/
+# TypeScript
+*.tsbuildinfo
 
-# OS/Editor junk
+# ESLint / linters
+.eslintcache
+.stylelintcache
+
+# Environment files (keep examples)
+.env
+.env.*
+!.env.example
+!.env*.example
+!.env.sample
+!.env*.sample
+.env.local
+.env.*.local
+.envrc
+
+# OS / Editor junk
 .DS_Store
+.DS_Store?
 Thumbs.db
+Icon?
+.AppleDouble
+.LSOverride
+
 .idea/
-.vs/
+.fleet/
+.history/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/*.code-snippets
 
-# Vite/React
-.vite/
+# Test artifacts
+cypress/videos/
+cypress/screenshots/
+playwright-report/
+test-results/
 
-# Others
-.turbo/
-.next/
-.vercel/
+# Misc
+*.swp
+*~
+*.tgz
+*.orig
