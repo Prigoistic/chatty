@@ -1,7 +1,9 @@
 import axios from "axios";
 
-// Always hit /api; Vite dev server will proxy to backend:3000
+// Prefer env override for deployments; default to "/api" for dev proxy and same-origin prod
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
 export const axiosInstance = axios.create({
-  baseURL: "/api",
+  baseURL: API_BASE,
   withCredentials: true,
 });

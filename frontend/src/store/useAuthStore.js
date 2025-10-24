@@ -3,7 +3,10 @@ import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+// Socket URL: allow override via VITE_SOCKET_URL; otherwise use backend in dev and same-origin in prod
+const BASE_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (import.meta.env.MODE === "development" ? "http://localhost:3000" : window.location.origin);
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,

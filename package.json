@@ -1,0 +1,26 @@
+{
+  "name": "chatapplication",
+  "version": "1.0.0",
+  "description": "A simple chat application starter with a Node/Express backend and a Vite + React frontend. The backend provides authentication, user listing, and profile update endpoints. The frontend is a Vite scaffold ready to integrate with the APIs.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
+    "start": "npm run start --prefix backend"
+    
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Prigoistic/chatty.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Prigoistic/chatty/issues"
+  },
+  "homepage": "https://github.com/Prigoistic/chatty#readme"
+}
